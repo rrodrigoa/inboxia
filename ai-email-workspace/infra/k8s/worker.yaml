@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inboxia-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inboxia-worker
+  template:
+    metadata:
+      labels:
+        app: inboxia-worker
+    spec:
+      containers:
+        - name: worker
+          image: <ACR_NAME>.azurecr.io/inboxia-backend:latest
+          command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info"]
+          env:
+            - name: DATABASE_URL
+              value: <DATABASE_URL>
+            - name: REDIS_URL
+              value: <REDIS_URL>
+            - name: PROVIDER
+              value: stub

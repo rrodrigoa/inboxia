@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inboxia-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inboxia-frontend
+  template:
+    metadata:
+      labels:
+        app: inboxia-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: <ACR_NAME>.azurecr.io/inboxia-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_BACKEND_URL
+              value: http://inboxia-backend:8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inboxia-frontend
+spec:
+  selector:
+    app: inboxia-frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: LoadBalancer

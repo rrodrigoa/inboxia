@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inboxia-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inboxia-backend
+  template:
+    metadata:
+      labels:
+        app: inboxia-backend
+    spec:
+      containers:
+        - name: backend
+          image: <ACR_NAME>.azurecr.io/inboxia-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: <DATABASE_URL>
+            - name: REDIS_URL
+              value: <REDIS_URL>
+            - name: PROVIDER
+              value: stub
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inboxia-backend
+spec:
+  selector:
+    app: inboxia-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
