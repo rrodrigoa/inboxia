@@ -6,8 +6,8 @@ from typing import List
 from imapclient import IMAPClient
 from sqlalchemy.orm import Session
 
+from app.core.db import SessionLocal
 from app.models.models import Folder, MailAccount, Message
-from app.tasks.jobs import embed_message
 from app.utils.email_parse import parse_rfc822
 from app.utils.threading import find_or_create_thread, update_thread_last_date
 
@@ -83,8 +83,20 @@ def ingest_account_messages(db: Session, account_id: int) -> int:
                 db.add(message)
                 update_thread_last_date(thread, sent_at)
                 db.flush()
+                # Local import to avoid services importing Celery tasks at module import time.
+                from app.tasks.jobs import embed_message
+
                 embed_message.delay(message.id)
                 ingested += 1
             folder.last_uid = max(uids)
             db.commit()
     return ingested
+
+
+def ingest_account_service(account_id: int) -> int:
+    """Ingest messages using a dedicated DB session for task orchestration."""
+    db = SessionLocal()
+    try:
+        return ingest_account_messages(db, account_id)
+    finally:
+        db.close()
