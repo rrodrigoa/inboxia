@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.db import SessionLocal
 from app.models.models import Embedding, Message
 from app.providers.factory import get_provider
 from app.utils.chunking import build_embedding_content, chunk_body
@@ -35,3 +36,16 @@ def embed_message_by_id(db: Session, message_id: int) -> int:
         )
     db.commit()
     return len(content_list)
+
+
+def embed_message_service(message_id: int) -> int:
+    """Embed a message in a dedicated DB session.
+
+    This stays in the service layer so Celery tasks can remain thin wrappers
+    without importing Celery from services.
+    """
+    db = SessionLocal()
+    try:
+        return embed_message_by_id(db, message_id)
+    finally:
+        db.close()
