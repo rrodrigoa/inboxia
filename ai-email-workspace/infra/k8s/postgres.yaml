@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inboxia-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inboxia-postgres
+  template:
+    metadata:
+      labels:
+        app: inboxia-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg16
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+            - name: POSTGRES_DB
+              value: inboxia
+          ports:
+            - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inboxia-postgres
+spec:
+  selector:
+    app: inboxia-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
