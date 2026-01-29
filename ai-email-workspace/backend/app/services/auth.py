@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.models.models import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt_sha256 pre-hashes long passwords with SHA-256 before bcrypt to safely
+# avoid bcrypt's 72-byte limit while keeping bcrypt for existing hashes.
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
