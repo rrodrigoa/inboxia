@@ -30,17 +30,36 @@ Inboxia is a local-first AI email workspace with IMAP ingestion, SMTP sending, a
 - Node 20+ (optional for local frontend dev)
 - Python 3.11 (optional for local backend dev)
 
-### Start the stack
+### Start the stack (default: local LLM + app)
 
 ```bash
 cd ai-email-workspace
 make up
 ```
 
-If port `8000` is already in use on your machine, set `BACKEND_PORT` to pick a different host port:
+The default `make up` command now brings up **everything** in one shot:
+
+- Postgres + Redis
+- Backend + Worker
+- Frontend
+- Local vLLM OpenAI-compatible service
+
+> **No GPU available?** Run the app without a local LLM (stub responses) using:
+>
+> ```bash
+> LLM_PROVIDER=stub docker compose -f docker-compose.yml up --build
+> ```
+
+If port `8000` is already in use on your machine, set `BACKEND_PORT` to pick a different host port for the backend:
 
 ```bash
 BACKEND_PORT=8001 make up
+```
+
+If port `8001` is already in use on your machine, set `LLM_PORT` to pick a different host port for the local LLM:
+
+```bash
+LLM_PORT=8002 make up
 ```
 
 ### Run migrations
@@ -88,6 +107,7 @@ Backend:
 - `OPENAI_EMBEDDING_MODEL` (optional, default: `text-embedding-3-small`)
 - `FRONTEND_BACKEND_URL`
 - `BACKEND_PORT` (optional, host port for the backend in Docker Compose; default: `8000`)
+- `LLM_PORT` (optional, host port for the local LLM in Docker Compose; default: `8001`)
 
 Frontend:
 
@@ -100,9 +120,19 @@ The UI is served by the Next.js frontend on port 3000. The backend on port 8000 
 - Frontend UI: `http://localhost:3000`
 - Backend API: `http://localhost:8000` (or `http://localhost:${BACKEND_PORT}`)
 
-## Run locally with AI
+## Run locally with AI (default)
 
-You can run a local OpenAI-compatible LLM with vLLM (recommended) and point the backend/worker at it.
+The default Docker Compose flow starts vLLM and points the backend/worker at it automatically:
+
+```bash
+make up
+```
+
+By default this uses:
+
+- LLM endpoint: `http://host.docker.internal:${LLM_PORT:-8001}/v1`
+- Chat model: `Qwen/Qwen2.5-7B-Instruct`
+- Embedding model: `Qwen/Qwen2.5-7B-Instruct`
 
 ### Option A: vLLM via Docker Compose (GPU)
 
@@ -112,11 +142,11 @@ Start the local LLM service:
 make llm
 ```
 
-This starts a vLLM OpenAI-compatible server on `http://localhost:8000/v1`. Configure the app stack to use it:
+This starts a vLLM OpenAI-compatible server on `http://localhost:${LLM_PORT:-8001}/v1`. Configure the app stack to use it:
 
 ```bash
 LLM_PROVIDER=openai_compatible
-OPENAI_BASE_URL=http://host.docker.internal:8000/v1
+OPENAI_BASE_URL=http://host.docker.internal:${LLM_PORT:-8001}/v1
 OPENAI_CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct
 OPENAI_EMBEDDING_MODEL=<embedding-model>
 ```
@@ -137,10 +167,10 @@ If you prefer to run vLLM directly on your host GPU:
 python -m vllm.entrypoints.openai.api_server \
   --model <chat-model> \
   --host 0.0.0.0 \
-  --port 8000
+  --port 8001
 ```
 
-Then set `OPENAI_BASE_URL=http://host.docker.internal:8000/v1` for the backend/worker.
+Then set `OPENAI_BASE_URL=http://host.docker.internal:8001/v1` for the backend/worker.
 
 ### Recommended models for ~16-20GB VRAM
 
@@ -162,12 +192,12 @@ OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 ## Using a local OpenAI-compatible service
 
-If you run an OpenAI-compatible server on your host (for example, on `http://localhost:8000/v1`), point the backend/worker at it and switch the provider:
+If you run an OpenAI-compatible server on your host (for example, on `http://localhost:8001/v1`), point the backend/worker at it and switch the provider:
 
 ```bash
 LLM_PROVIDER=openai_compatible
 OPENAI_API_KEY=local-key
-OPENAI_BASE_URL=http://host.docker.internal:8000/v1
+OPENAI_BASE_URL=http://host.docker.internal:8001/v1
 OPENAI_CHAT_MODEL=your-chat-model
 OPENAI_EMBEDDING_MODEL=your-embedding-model
 ```
