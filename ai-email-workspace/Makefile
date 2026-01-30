@@ -1,4 +1,4 @@
-.PHONY: up migrate seed test
+.PHONY: up migrate seed test llm
 
 up:
 	docker compose up --build
@@ -11,3 +11,6 @@ seed:
 
 test:
 	docker compose run --rm backend pytest
+
+llm:
+	docker compose -f docker-compose.llm.yml up --build

@@ -54,6 +54,8 @@ The demo user defaults to:
 - Email: `demo@inboxia.local`
 - Password: `password`
 
+After seeding, open the UI at `http://localhost:3000` and log in with the demo credentials.
+
 ### Run tests
 
 ```bash
@@ -72,13 +74,92 @@ Backend:
 
 - `DATABASE_URL`
 - `REDIS_URL`
-- `PROVIDER=stub|openai`
+- `LLM_PROVIDER=stub|openai|openai_compatible` (preferred)
+- `PROVIDER=stub|openai` (legacy, still supported)
 - `OPENAI_API_KEY` (optional)
+- `OPENAI_BASE_URL` (optional, default: `https://api.openai.com/v1`)
+- `OPENAI_CHAT_MODEL` (optional, default: `gpt-4o-mini`)
+- `OPENAI_EMBEDDING_MODEL` (optional, default: `text-embedding-3-small`)
 - `FRONTEND_BACKEND_URL`
 
 Frontend:
 
 - `NEXT_PUBLIC_BACKEND_URL`
+
+## Where to access the UI
+
+The UI is served by the Next.js frontend on port 3000. The backend on port 8000 only serves JSON APIs, so `GET /` returns `404 Not Found` by design.
+
+- Frontend UI: `http://localhost:3000`
+- Backend API: `http://localhost:8000`
+
+## Run locally with AI
+
+You can run a local OpenAI-compatible LLM with vLLM (recommended) and point the backend/worker at it.
+
+### Option A: vLLM via Docker Compose (GPU)
+
+Start the local LLM service:
+
+```bash
+make llm
+```
+
+This starts a vLLM OpenAI-compatible server on `http://localhost:8001/v1`. Configure the app stack to use it:
+
+```bash
+LLM_PROVIDER=openai_compatible
+OPENAI_BASE_URL=http://host.docker.internal:8001/v1
+OPENAI_CHAT_MODEL=<chat-model>
+OPENAI_EMBEDDING_MODEL=<embedding-model>
+```
+
+### Option B: vLLM on the host
+
+If you prefer to run vLLM directly on your host GPU:
+
+```bash
+python -m vllm.entrypoints.openai.api_server \
+  --model <chat-model> \
+  --host 0.0.0.0 \
+  --port 8001
+```
+
+Then set `OPENAI_BASE_URL=http://host.docker.internal:8001/v1` for the backend/worker.
+
+### Recommended models for ~60GB VRAM
+
+- `meta-llama/Meta-Llama-3.1-8B-Instruct` (fast, fp16)
+- `meta-llama/Meta-Llama-3.1-13B-Instruct` (fp16)
+- `meta-llama/Meta-Llama-3.1-70B-Instruct` with quantization (AWQ/GPTQ)
+
+Make sure your embedding model supports the OpenAI `/v1/embeddings` API. You can point both chat and embeddings to the same model if needed.
+
+### Switching back to OpenAI
+
+To use OpenAI's hosted API instead of a local LLM:
+
+```bash
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_CHAT_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+```
+
+## Using a local OpenAI-compatible service
+
+If you run an OpenAI-compatible server on your host (for example, on `http://localhost:8001/v1`), point the backend/worker at it and switch the provider:
+
+```bash
+LLM_PROVIDER=openai_compatible
+OPENAI_API_KEY=local-key
+OPENAI_BASE_URL=http://host.docker.internal:8001/v1
+OPENAI_CHAT_MODEL=your-chat-model
+OPENAI_EMBEDDING_MODEL=your-embedding-model
+```
+
+In Docker Compose, `host.docker.internal` is wired to the host via `extra_hosts` so containers can reach the service running on your machine.
 
 ## API Endpoints
 

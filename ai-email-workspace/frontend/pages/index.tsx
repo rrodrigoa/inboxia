@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
+import { useAuth } from '../lib/auth';
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
@@ -39,6 +41,8 @@ type ChatResponse = {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const { user, initialized, logout } = useAuth();
   const [accounts, setAccounts] = useState<MailAccount[]>([]);
   const [accountId, setAccountId] = useState<number | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -50,17 +54,34 @@ export default function Home() {
   const [chatQuery, setChatQuery] = useState('');
   const [chatAnswer, setChatAnswer] = useState<ChatResponse | null>(null);
   const [useThread, setUseThread] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+
+  const userIdParam = useMemo(() => {
+    if (!user?.userId) return '';
+    return `user_id=${user.userId}`;
+  }, [user]);
 
   useEffect(() => {
-    fetch(`${backendUrl}/api/accounts`)
+    if (!initialized) return;
+    if (!user) {
+      router.replace('/login');
+    }
+  }, [initialized, router, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const url = userIdParam ? `${backendUrl}/api/accounts?${userIdParam}` : `${backendUrl}/api/accounts`;
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         setAccounts(data);
         if (data.length > 0) {
           setAccountId(data[0].id);
+        } else {
+          setAccountId(null);
         }
       });
-  }, []);
+  }, [user, userIdParam]);
 
   useEffect(() => {
     if (!accountId) return;
@@ -68,9 +89,12 @@ export default function Home() {
       .then((res) => res.json())
       .then((data) => {
         setFolders(data);
-        if (data.length > 0) {
-          setSelectedFolder(data[0].id);
+        const inbox = data.find((folder: Folder) => folder.name.toLowerCase() === 'inbox');
+        if (inbox) {
+          setSelectedFolder(inbox.id);
+          return;
         }
+        setSelectedFolder(data.length > 0 ? data[0].id : null);
       });
   }, [accountId]);
 
@@ -97,6 +121,7 @@ export default function Home() {
 
   const runChat = async () => {
     if (!accountId || !chatQuery) return;
+    setChatError(null);
     const payload = {
       account_id: accountId,
       query: chatQuery,
@@ -108,11 +133,32 @@ export default function Home() {
       body: JSON.stringify(payload),
     });
     const data = await res.json();
+    if (!res.ok) {
+      setChatAnswer(null);
+      setChatError(data.detail || 'Unable to reach the LLM service.');
+      return;
+    }
     setChatAnswer(data);
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="app">
+    <div className="app-shell">
+      <header className="top-bar">
+        <div>
+          <strong>Inboxia</strong>
+        </div>
+        <div className="top-bar-right">
+          <span>{user.email}</span>
+          <button className="secondary" onClick={logout}>
+            Log out
+          </button>
+        </div>
+      </header>
+      <div className="app">
       <aside className="panel">
         <h2>Accounts</h2>
         {accounts.map((account) => (
@@ -161,7 +207,9 @@ export default function Home() {
       <section className="panel chat-panel">
         <h2>AI Chat</h2>
         <div className="chat-box">
-          {chatAnswer ? (
+          {chatError ? (
+            <p className="error-text">{chatError}</p>
+          ) : chatAnswer ? (
             <div>
               <p>{chatAnswer.answer}</p>
               <div>
@@ -196,6 +244,7 @@ export default function Home() {
         <textarea value={chatQuery} onChange={(e) => setChatQuery(e.target.value)} />
         <button onClick={runChat}>Ask</button>
       </section>
+      </div>
     </div>
   );
 }

@@ -22,13 +22,15 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/inboxia
       REDIS_URL: redis://redis:6379/0
-      PROVIDER: stub
+      LLM_PROVIDER: stub
       FRONTEND_BACKEND_URL: http://localhost:8000
     depends_on:
       - db
       - redis
     ports:
       - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./backend:/app
 
@@ -38,10 +40,12 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/inboxia
       REDIS_URL: redis://redis:6379/0
-      PROVIDER: stub
+      LLM_PROVIDER: stub
     depends_on:
       - db
       - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./backend:/app
 

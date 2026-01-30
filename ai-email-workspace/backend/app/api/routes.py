@@ -36,8 +36,11 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/api/accounts", response_model=list[MailAccountOut])
-def list_accounts(db: Session = Depends(get_db)):
-    accounts = db.query(MailAccount).all()
+def list_accounts(user_id: int | None = None, db: Session = Depends(get_db)):
+    query = db.query(MailAccount)
+    if user_id:
+        query = query.filter(MailAccount.user_id == user_id)
+    accounts = query.all()
     return [
         MailAccountOut(
             id=acct.id,
@@ -139,8 +142,11 @@ def get_thread(thread_id: int, db: Session = Depends(get_db)):
 
 @router.post("/api/compose/draft", response_model=DraftResponse)
 def compose_draft(payload: DraftRequest):
-    subject, body = draft_email(payload.to, payload.subject_hint, payload.instructions)
-    return DraftResponse(subject=subject, body=body)
+    try:
+        subject, body = draft_email(payload.to, payload.subject_hint, payload.instructions)
+        return DraftResponse(subject=subject, body=body)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/api/compose/send", response_model=SendResponse)
@@ -151,5 +157,13 @@ def compose_send(payload: SendRequest, db: Session = Depends(get_db)):
 
 @router.post("/api/chat/query", response_model=ChatQueryResponse)
 def chat_query(payload: ChatQueryRequest, db: Session = Depends(get_db)):
-    answer, citations = answer_question(db, payload.account_id, payload.query, payload.selected_thread_id)
-    return ChatQueryResponse(answer=answer, citations=citations)
+    try:
+        answer, citations = answer_question(
+            db,
+            payload.account_id,
+            payload.query,
+            payload.selected_thread_id,
+        )
+        return ChatQueryResponse(answer=answer, citations=citations)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
