@@ -1,7 +1,7 @@
 .PHONY: up migrate seed test llm
 
 up:
-	docker compose up --build
+	docker compose -f docker-compose.yml -f docker-compose.llm.yml up --build
 
 migrate:
 	docker compose run --rm backend alembic upgrade head

@@ -22,7 +22,10 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/inboxia
       REDIS_URL: redis://redis:6379/0
-      LLM_PROVIDER: stub
+      LLM_PROVIDER: openai_compatible
+      OPENAI_BASE_URL: http://host.docker.internal:${LLM_PORT:-8001}/v1
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-Qwen/Qwen2.5-7B-Instruct}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-Qwen/Qwen2.5-7B-Instruct}
       FRONTEND_BACKEND_URL: http://localhost:${BACKEND_PORT:-8000}
     depends_on:
       - db
@@ -40,7 +43,10 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/inboxia
       REDIS_URL: redis://redis:6379/0
-      LLM_PROVIDER: stub
+      LLM_PROVIDER: openai_compatible
+      OPENAI_BASE_URL: http://host.docker.internal:${LLM_PORT:-8001}/v1
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-Qwen/Qwen2.5-7B-Instruct}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-Qwen/Qwen2.5-7B-Instruct}
     depends_on:
       - db
       - redis

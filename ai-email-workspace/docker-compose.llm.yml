@@ -6,7 +6,7 @@ services:
     command: >
       --model ${LLM_MODEL:-Qwen/Qwen2.5-7B-Instruct}
       --host 0.0.0.0
-      --port 8000
+      --port ${LLM_PORT:-8001}
       --dtype ${VLLM_DTYPE:-auto}
       --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION:-0.9}
     volumes:
@@ -14,7 +14,7 @@ services:
     environment:
       - HF_HOME=/root/.cache/huggingface
     ports:
-      - "8000:8000"
+      - "${LLM_PORT:-8001}:${LLM_PORT:-8001}"
     gpus: all
 
 volumes:
