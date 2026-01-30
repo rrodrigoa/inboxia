@@ -1,0 +1,21 @@
+version: '3.9'
+
+services:
+  llm:
+    image: vllm/vllm-openai:latest
+    command: >
+      --model ${VLLM_MODEL:-meta-llama/Meta-Llama-3.1-8B-Instruct}
+      --host 0.0.0.0
+      --port 8000
+      --dtype ${VLLM_DTYPE:-auto}
+      --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION:-0.9}
+    volumes:
+      - vllm_cache:/data
+    environment:
+      - HF_HOME=/data/hf
+    ports:
+      - "8001:8000"
+    gpus: all
+
+volumes:
+  vllm_cache:

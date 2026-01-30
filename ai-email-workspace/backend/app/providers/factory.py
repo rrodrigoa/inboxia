@@ -5,6 +5,7 @@ from app.providers.stub import LocalStubProvider
 
 
 def get_provider() -> LLMProvider:
-    if settings.provider == "openai":
+    provider_name = (settings.llm_provider or settings.provider).lower()
+    if provider_name in {"openai", "openai_compatible"}:
         return OpenAIProvider()
     return LocalStubProvider()
