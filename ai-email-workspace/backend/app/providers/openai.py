@@ -38,7 +38,23 @@ class OpenAIProvider(LLMProvider):
         except (httpx.RequestError, httpx.HTTPStatusError) as exc:
             self._raise_for_unreachable(exc)
         data = response.json()
-        return [item["embedding"] for item in data["data"]]
+        if "data" in data and isinstance(data["data"], list):
+            embeddings: List[List[float]] = []
+            for item in data["data"]:
+                if "embedding" not in item:
+                    raise RuntimeError(
+                        "Embedding response is missing an embedding field. "
+                        f"Received: {data}"
+                    )
+                embeddings.append(item["embedding"])
+            return embeddings
+        if "embedding" in data:
+            return [data["embedding"]]
+        if "embeddings" in data:
+            return data["embeddings"]
+        if "error" in data:
+            raise RuntimeError(f"Embedding request failed: {data['error']}")
+        raise RuntimeError(f"Unexpected embedding response from {self.base_url}: {data}")
 
     def chat(self, prompt: str) -> str:
         payload = {
