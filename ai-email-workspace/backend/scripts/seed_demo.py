@@ -98,7 +98,7 @@ def main():
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(bind=engine)
     db = SessionLocal()
-    email = os.getenv("DEMO_EMAIL", "demo@inboxia.local")
+    email = os.getenv("DEMO_EMAIL", "demo@example.com")
     password = os.getenv("DEMO_PASSWORD", "password")
     user = db.query(User).filter(User.email == email).first()
     if not user:
@@ -137,14 +137,14 @@ def main():
         account.id,
         inbox,
         subject="Welcome to Inboxia",
-        from_email="founders@inboxia.local",
+        from_email="founders@example.com",
         to_emails=[email],
         body_text=(
             "Hi there,\n\nWelcome to Inboxia! This demo inbox shows how threads, "
             "messages, and AI chat work together.\n\nBest,\nInboxia Team"
         ),
         sent_at=now - timedelta(days=2),
-        message_id="demo-1@inboxia.local",
+        message_id="demo-1@example.com",
     )
     seed_message(
         db,
@@ -152,14 +152,14 @@ def main():
         account.id,
         inbox,
         subject="GPU cluster availability",
-        from_email="ops@inboxia.local",
+        from_email="ops@example.com",
         to_emails=[email],
         body_text=(
             "We reserved the RTX workstation for your local LLM runs. "
-            "It has 60GB VRAM. Please confirm your scheduled time slot."
+            "It has 20GB VRAM. Please confirm your scheduled time slot."
         ),
         sent_at=now - timedelta(days=1, hours=3),
-        message_id="demo-2@inboxia.local",
+        message_id="demo-2@example.com",
     )
     seed_message(
         db,
@@ -167,14 +167,14 @@ def main():
         account.id,
         inbox,
         subject="Project Phoenix kickoff notes",
-        from_email="pm@inboxia.local",
+        from_email="pm@example.com",
         to_emails=[email],
         body_text=(
             "Kickoff summary:\n- Goals: launch by end of month.\n"
             "- Risks: model latency.\n- Next steps: finalize UX, add auth flow."
         ),
         sent_at=now - timedelta(hours=6),
-        message_id="demo-3@inboxia.local",
+        message_id="demo-3@example.com",
     )
     db.commit()
     print("Seeded demo user, account, and inbox messages")

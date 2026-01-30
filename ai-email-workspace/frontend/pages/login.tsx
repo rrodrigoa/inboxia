@@ -7,7 +7,7 @@ const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000
 export default function LoginPage() {
   const router = useRouter();
   const { user, login, initialized } = useAuth();
-  const [email, setEmail] = useState('demo@inboxia.local');
+  const [email, setEmail] = useState('demo@example.com');
   const [password, setPassword] = useState('password');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,16 @@ export default function LoginPage() {
       });
       if (!res.ok) {
         const body = await res.json();
-        setError(body.detail || 'Login failed.');
+        const detail = body.detail;
+        if (Array.isArray(detail)) {
+          const message = detail
+            .map((entry: { msg?: string }) => entry.msg)
+            .filter(Boolean)
+            .join(' ');
+          setError(message || 'Login failed.');
+        } else {
+          setError(detail || 'Login failed.');
+        }
         return;
       }
       const data = await res.json();

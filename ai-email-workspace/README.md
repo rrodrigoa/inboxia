@@ -51,7 +51,7 @@ make seed
 
 The demo user defaults to:
 
-- Email: `demo@inboxia.local`
+- Email: `demo@example.com`
 - Password: `password`
 
 After seeding, open the UI at `http://localhost:3000` and log in with the demo credentials.
@@ -127,11 +127,11 @@ python -m vllm.entrypoints.openai.api_server \
 
 Then set `OPENAI_BASE_URL=http://host.docker.internal:8001/v1` for the backend/worker.
 
-### Recommended models for ~60GB VRAM
+### Recommended models for ~20GB VRAM
 
-- `meta-llama/Meta-Llama-3.1-8B-Instruct` (fast, fp16)
-- `meta-llama/Meta-Llama-3.1-13B-Instruct` (fp16)
-- `meta-llama/Meta-Llama-3.1-70B-Instruct` with quantization (AWQ/GPTQ)
+- `meta-llama/Llama-3.2-3B-Instruct` (fast, fp16)
+- `meta-llama/Meta-Llama-3.1-8B-Instruct` (fp16)
+- `Qwen/Qwen2.5-7B-Instruct` (fp16)
 
 Make sure your embedding model supports the OpenAI `/v1/embeddings` API. You can point both chat and embeddings to the same model if needed.
 
