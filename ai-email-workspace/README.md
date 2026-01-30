@@ -105,14 +105,22 @@ Start the local LLM service:
 make llm
 ```
 
-This starts a vLLM OpenAI-compatible server on `http://localhost:8001/v1`. Configure the app stack to use it:
+This starts a vLLM OpenAI-compatible server on `http://localhost:8000/v1`. Configure the app stack to use it:
 
 ```bash
 LLM_PROVIDER=openai_compatible
-OPENAI_BASE_URL=http://host.docker.internal:8001/v1
-OPENAI_CHAT_MODEL=<chat-model>
+OPENAI_BASE_URL=http://host.docker.internal:8000/v1
+OPENAI_CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct
 OPENAI_EMBEDDING_MODEL=<embedding-model>
 ```
+
+By default, `make llm` serves `Qwen/Qwen2.5-7B-Instruct` with no credentials required and persists the Hugging Face cache in a Docker volume so model weights are reused across restarts. To switch models, set `LLM_MODEL`:
+
+```bash
+LLM_MODEL=Qwen/Qwen2.5-7B-Instruct make llm
+```
+
+To clear the cached weights, remove the `ai-email-workspace_vllm_cache` Docker volume.
 
 ### Option B: vLLM on the host
 
@@ -122,15 +130,13 @@ If you prefer to run vLLM directly on your host GPU:
 python -m vllm.entrypoints.openai.api_server \
   --model <chat-model> \
   --host 0.0.0.0 \
-  --port 8001
+  --port 8000
 ```
 
-Then set `OPENAI_BASE_URL=http://host.docker.internal:8001/v1` for the backend/worker.
+Then set `OPENAI_BASE_URL=http://host.docker.internal:8000/v1` for the backend/worker.
 
-### Recommended models for ~20GB VRAM
+### Recommended models for ~16-20GB VRAM
 
-- `meta-llama/Llama-3.2-3B-Instruct` (fast, fp16)
-- `meta-llama/Meta-Llama-3.1-8B-Instruct` (fp16)
 - `Qwen/Qwen2.5-7B-Instruct` (fp16)
 
 Make sure your embedding model supports the OpenAI `/v1/embeddings` API. You can point both chat and embeddings to the same model if needed.
@@ -149,12 +155,12 @@ OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 ## Using a local OpenAI-compatible service
 
-If you run an OpenAI-compatible server on your host (for example, on `http://localhost:8001/v1`), point the backend/worker at it and switch the provider:
+If you run an OpenAI-compatible server on your host (for example, on `http://localhost:8000/v1`), point the backend/worker at it and switch the provider:
 
 ```bash
 LLM_PROVIDER=openai_compatible
 OPENAI_API_KEY=local-key
-OPENAI_BASE_URL=http://host.docker.internal:8001/v1
+OPENAI_BASE_URL=http://host.docker.internal:8000/v1
 OPENAI_CHAT_MODEL=your-chat-model
 OPENAI_EMBEDDING_MODEL=your-embedding-model
 ```
