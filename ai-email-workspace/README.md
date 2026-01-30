@@ -37,6 +37,12 @@ cd ai-email-workspace
 make up
 ```
 
+If port `8000` is already in use on your machine, set `BACKEND_PORT` to pick a different host port:
+
+```bash
+BACKEND_PORT=8001 make up
+```
+
 ### Run migrations
 
 ```bash
@@ -81,6 +87,7 @@ Backend:
 - `OPENAI_CHAT_MODEL` (optional, default: `gpt-4o-mini`)
 - `OPENAI_EMBEDDING_MODEL` (optional, default: `text-embedding-3-small`)
 - `FRONTEND_BACKEND_URL`
+- `BACKEND_PORT` (optional, host port for the backend in Docker Compose; default: `8000`)
 
 Frontend:
 
@@ -91,7 +98,7 @@ Frontend:
 The UI is served by the Next.js frontend on port 3000. The backend on port 8000 only serves JSON APIs, so `GET /` returns `404 Not Found` by design.
 
 - Frontend UI: `http://localhost:3000`
-- Backend API: `http://localhost:8000`
+- Backend API: `http://localhost:8000` (or `http://localhost:${BACKEND_PORT}`)
 
 ## Run locally with AI
 
