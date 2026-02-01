@@ -20,7 +20,7 @@ class OpenAIProvider(LLMProvider):
                 "Chat model is not configured. Set OPENAI_CHAT_MODEL to the model "
                 "name served by your OpenAI-compatible endpoint."
             )
-        return settings.openai_chat_model
+        return settings.chat_model or settings.openai_chat_model
 
     def _resolve_embedding_model(self) -> str:
         if not settings.openai_embedding_model:
@@ -28,7 +28,7 @@ class OpenAIProvider(LLMProvider):
                 "Embedding model is not configured. Set OPENAI_EMBEDDING_MODEL to "
                 "a model that supports /v1/embeddings."
             )
-        return settings.openai_embedding_model
+        return settings.embedding_model or settings.openai_embedding_model
 
     def _headers(self) -> dict[str, str]:
         if not self.api_key:

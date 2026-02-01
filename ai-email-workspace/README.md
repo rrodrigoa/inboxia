@@ -101,8 +101,8 @@ Backend:
 - `REDIS_URL`
 - `LLM_PROVIDER=stub|openai|openai_compatible` (preferred)
 - `PROVIDER=stub|openai` (legacy, still supported)
-- `CHAT_MODEL` (deprecated; ignored by OpenAI providers)
-- `EMBEDDING_MODEL` (deprecated; ignored by OpenAI providers)
+- `CHAT_MODEL` (optional, legacy override for the chat model name)
+- `EMBEDDING_MODEL` (optional, legacy override for the embedding model name)
 - `OPENAI_API_KEY` (optional)
 - `OPENAI_BASE_URL` (optional, default: `https://api.openai.com/v1`)
 - `OPENAI_CHAT_MODEL` (required for OpenAI/OpenAI-compatible providers)

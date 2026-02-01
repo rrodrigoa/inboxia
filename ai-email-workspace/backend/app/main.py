@@ -29,12 +29,8 @@ def validate_llm_configuration() -> None:
         raise RuntimeError("OPENAI_CHAT_MODEL is required for OpenAI-compatible providers.")
     if not settings.openai_embedding_model:
         raise RuntimeError("OPENAI_EMBEDDING_MODEL is required for OpenAI-compatible providers.")
-    if settings.chat_model:
-        logger.warning("CHAT_MODEL is deprecated for OpenAI providers. Use OPENAI_CHAT_MODEL instead.")
-    if settings.embedding_model:
-        logger.warning("EMBEDDING_MODEL is deprecated for OpenAI providers. Use OPENAI_EMBEDDING_MODEL instead.")
-    chat_model = settings.openai_chat_model
-    embedding_model = settings.openai_embedding_model
+    chat_model = settings.chat_model or settings.openai_chat_model
+    embedding_model = settings.embedding_model or settings.openai_embedding_model
     if chat_model == embedding_model:
         raise RuntimeError(
             "Chat and embedding models must be different. Update OPENAI_EMBEDDING_MODEL."
