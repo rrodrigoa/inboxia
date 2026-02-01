@@ -101,6 +101,8 @@ Backend:
 - `REDIS_URL`
 - `LLM_PROVIDER=stub|openai|openai_compatible` (preferred)
 - `PROVIDER=stub|openai` (legacy, still supported)
+- `CHAT_MODEL` (optional, overrides the chat model)
+- `EMBEDDING_MODEL` (optional, overrides the embedding model)
 - `OPENAI_API_KEY` (optional)
 - `OPENAI_BASE_URL` (optional, default: `https://api.openai.com/v1`)
 - `OPENAI_CHAT_MODEL` (optional, default: `gpt-4o-mini`)
@@ -128,11 +130,13 @@ The default Docker Compose flow starts vLLM and points the backend/worker at it 
 make up
 ```
 
+Inboxia requires two models when running locally: one for chat completions and one for embeddings. The embedding model must support the OpenAI `/v1/embeddings` API.
+
 By default this uses:
 
 - LLM endpoint: `http://host.docker.internal:${LLM_PORT:-8001}/v1`
 - Chat model: `Qwen/Qwen2.5-7B-Instruct`
-- Embedding model: `Qwen/Qwen2.5-7B-Instruct`
+- Embedding model: `BAAI/bge-small-en-v1.5`
 
 ### Option A: vLLM via Docker Compose (GPU)
 
@@ -147,14 +151,16 @@ This starts a vLLM OpenAI-compatible server on `http://localhost:${LLM_PORT:-800
 ```bash
 LLM_PROVIDER=openai_compatible
 OPENAI_BASE_URL=http://host.docker.internal:${LLM_PORT:-8001}/v1
-OPENAI_CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct
-OPENAI_EMBEDDING_MODEL=<embedding-model>
+CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct
+EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 ```
 
-By default, `make llm` serves `Qwen/Qwen2.5-7B-Instruct` with no credentials required and persists the Hugging Face cache in a Docker volume so model weights are reused across restarts. To switch models, set `LLM_MODEL`:
+By default, `make llm` serves the chat and embedding models listed above with no credentials required and persists the Hugging Face cache in a Docker volume so model weights are reused across restarts. To switch the weights vLLM downloads, set `LLM_CHAT_MODEL` and `LLM_EMBEDDING_MODEL`:
 
 ```bash
-LLM_MODEL=Qwen/Qwen2.5-7B-Instruct make llm
+LLM_CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct \
+LLM_EMBEDDING_MODEL=BAAI/bge-small-en-v1.5 \
+make llm
 ```
 
 To clear the cached weights, remove the `ai-email-workspace_vllm_cache` Docker volume.
@@ -166,6 +172,9 @@ If you prefer to run vLLM directly on your host GPU:
 ```bash
 python -m vllm.entrypoints.openai.api_server \
   --model <chat-model> \
+  --served-model-name <chat-model-name> \
+  --model <embedding-model> \
+  --served-model-name <embedding-model-name> \
   --host 0.0.0.0 \
   --port 8001
 ```
@@ -175,8 +184,9 @@ Then set `OPENAI_BASE_URL=http://host.docker.internal:8001/v1` for the backend/w
 ### Recommended models for ~16-20GB VRAM
 
 - `Qwen/Qwen2.5-7B-Instruct` (fp16)
+- `BAAI/bge-small-en-v1.5` (fp16)
 
-Make sure your embedding model supports the OpenAI `/v1/embeddings` API. You can point both chat and embeddings to the same model if needed.
+Two separate models are required because the chat model does not support the OpenAI `/v1/embeddings` API. Expect roughly ~16GB VRAM for the chat model and ~2GB VRAM for the embedding model.
 
 ### Switching back to OpenAI
 
@@ -198,8 +208,8 @@ If you run an OpenAI-compatible server on your host (for example, on `http://loc
 LLM_PROVIDER=openai_compatible
 OPENAI_API_KEY=local-key
 OPENAI_BASE_URL=http://host.docker.internal:8001/v1
-OPENAI_CHAT_MODEL=your-chat-model
-OPENAI_EMBEDDING_MODEL=your-embedding-model
+CHAT_MODEL=your-chat-model
+EMBEDDING_MODEL=your-embedding-model
 ```
 
 In Docker Compose, `host.docker.internal` is wired to the host via `extra_hosts` so containers can reach the service running on your machine.

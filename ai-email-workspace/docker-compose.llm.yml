@@ -4,7 +4,10 @@ services:
   llm:
     image: vllm/vllm-openai:latest
     command: >
-      --model ${LLM_MODEL:-Qwen/Qwen2.5-7B-Instruct}
+      --model ${LLM_CHAT_MODEL:-Qwen/Qwen2.5-7B-Instruct}
+      --served-model-name ${CHAT_MODEL:-Qwen/Qwen2.5-7B-Instruct}
+      --model ${LLM_EMBEDDING_MODEL:-BAAI/bge-small-en-v1.5}
+      --served-model-name ${EMBEDDING_MODEL:-BAAI/bge-small-en-v1.5}
       --host 0.0.0.0
       --port ${LLM_PORT:-8001}
       --dtype ${VLLM_DTYPE:-auto}

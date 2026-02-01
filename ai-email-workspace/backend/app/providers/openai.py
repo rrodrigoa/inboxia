@@ -14,6 +14,18 @@ class OpenAIProvider(LLMProvider):
         self.api_key = settings.openai_api_key or ""
         self.base_url = settings.openai_base_url.rstrip("/")
 
+    def _resolve_chat_model(self) -> str:
+        return settings.chat_model or settings.openai_chat_model
+
+    def _resolve_embedding_model(self) -> str:
+        embedding_model = settings.embedding_model or settings.openai_embedding_model
+        if not embedding_model:
+            raise RuntimeError(
+                "Embedding model is not configured. Set EMBEDDING_MODEL or "
+                "OPENAI_EMBEDDING_MODEL to a model that supports /v1/embeddings."
+            )
+        return embedding_model
+
     def _headers(self) -> dict[str, str]:
         if not self.api_key:
             return {}
@@ -26,7 +38,14 @@ class OpenAIProvider(LLMProvider):
         ) from exc
 
     def embed(self, texts: List[str]) -> List[List[float]]:
-        payload = {"model": settings.openai_embedding_model, "input": texts}
+        embedding_model = self._resolve_embedding_model()
+        chat_model = self._resolve_chat_model()
+        if embedding_model == chat_model:
+            raise RuntimeError(
+                "Embedding model matches the chat model. Configure EMBEDDING_MODEL "
+                "to a model that supports /v1/embeddings."
+            )
+        payload = {"model": embedding_model, "input": texts}
         try:
             response = httpx.post(
                 f"{self.base_url}/embeddings",
@@ -53,12 +72,25 @@ class OpenAIProvider(LLMProvider):
         if "embeddings" in data:
             return data["embeddings"]
         if "error" in data:
-            raise RuntimeError(f"Embedding request failed: {data['error']}")
+            error = data["error"]
+            message = ""
+            if isinstance(error, dict):
+                message = str(error.get("message", ""))
+            elif isinstance(error, str):
+                message = error
+            if "does not support" in message and "Embedding" in message:
+                raise RuntimeError(
+                    "Embedding request failed because the selected model does not "
+                    "support the Embeddings API. Configure OPENAI_EMBEDDING_MODEL "
+                    "to a model that supports /v1/embeddings (or switch providers). "
+                    f"Original error: {error}"
+                )
+            raise RuntimeError(f"Embedding request failed: {error}")
         raise RuntimeError(f"Unexpected embedding response from {self.base_url}: {data}")
 
     def chat(self, prompt: str) -> str:
         payload = {
-            "model": settings.openai_chat_model,
+            "model": self._resolve_chat_model(),
             "messages": [
                 {"role": "system", "content": "You are an assistant for an email workspace. Follow instructions."},
                 {"role": "user", "content": prompt},
