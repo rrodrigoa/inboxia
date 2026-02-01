@@ -24,8 +24,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: openai_compatible
       OPENAI_BASE_URL: http://host.docker.internal:${LLM_PORT:-8001}/v1
-      CHAT_MODEL: ${CHAT_MODEL:-Qwen/Qwen2.5-7B-Instruct}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-small-en-v1.5}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-chat}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-embedding}
       FRONTEND_BACKEND_URL: http://localhost:${BACKEND_PORT:-8000}
     depends_on:
       - db
@@ -45,8 +45,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       LLM_PROVIDER: openai_compatible
       OPENAI_BASE_URL: http://host.docker.internal:${LLM_PORT:-8001}/v1
-      CHAT_MODEL: ${CHAT_MODEL:-Qwen/Qwen2.5-7B-Instruct}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-small-en-v1.5}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-chat}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-embedding}
     depends_on:
       - db
       - redis

@@ -101,12 +101,12 @@ Backend:
 - `REDIS_URL`
 - `LLM_PROVIDER=stub|openai|openai_compatible` (preferred)
 - `PROVIDER=stub|openai` (legacy, still supported)
-- `CHAT_MODEL` (optional, overrides the chat model)
-- `EMBEDDING_MODEL` (optional, overrides the embedding model)
+- `CHAT_MODEL` (deprecated; ignored by OpenAI providers)
+- `EMBEDDING_MODEL` (deprecated; ignored by OpenAI providers)
 - `OPENAI_API_KEY` (optional)
 - `OPENAI_BASE_URL` (optional, default: `https://api.openai.com/v1`)
-- `OPENAI_CHAT_MODEL` (optional, default: `gpt-4o-mini`)
-- `OPENAI_EMBEDDING_MODEL` (optional, default: `text-embedding-3-small`)
+- `OPENAI_CHAT_MODEL` (required for OpenAI/OpenAI-compatible providers)
+- `OPENAI_EMBEDDING_MODEL` (required for OpenAI/OpenAI-compatible providers)
 - `FRONTEND_BACKEND_URL`
 - `BACKEND_PORT` (optional, host port for the backend in Docker Compose; default: `8000`)
 - `LLM_PORT` (optional, host port for the local LLM in Docker Compose; default: `8001`)
@@ -130,13 +130,24 @@ The default Docker Compose flow starts vLLM and points the backend/worker at it 
 make up
 ```
 
-Inboxia requires two models when running locally: one for chat completions and one for embeddings. The embedding model must support the OpenAI `/v1/embeddings` API.
+Inboxia requires two models when running locally: one for chat completions and one for embeddings. The embedding model must support the OpenAI `/v1/embeddings` API. The backend requires explicit `OPENAI_CHAT_MODEL` and `OPENAI_EMBEDDING_MODEL` values so it can route each request correctly.
 
 By default this uses:
 
 - LLM endpoint: `http://host.docker.internal:${LLM_PORT:-8001}/v1`
-- Chat model: `Qwen/Qwen2.5-7B-Instruct`
-- Embedding model: `BAAI/bge-small-en-v1.5`
+- Chat model weights: `Qwen/Qwen2.5-7B-Instruct` (served as `chat`)
+- Embedding model weights: `BAAI/bge-small-en-v1.5` (served as `embedding`)
+
+Default environment values in Docker Compose:
+
+```bash
+LLM_CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct
+LLM_EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+LLM_CHAT_MODEL_NAME=chat
+LLM_EMBEDDING_MODEL_NAME=embedding
+OPENAI_CHAT_MODEL=chat
+OPENAI_EMBEDDING_MODEL=embedding
+```
 
 ### Option A: vLLM via Docker Compose (GPU)
 
@@ -151,17 +162,19 @@ This starts a vLLM OpenAI-compatible server on `http://localhost:${LLM_PORT:-800
 ```bash
 LLM_PROVIDER=openai_compatible
 OPENAI_BASE_URL=http://host.docker.internal:${LLM_PORT:-8001}/v1
-CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct
-EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+OPENAI_CHAT_MODEL=chat
+OPENAI_EMBEDDING_MODEL=embedding
 ```
 
-By default, `make llm` serves the chat and embedding models listed above with no credentials required and persists the Hugging Face cache in a Docker volume so model weights are reused across restarts. To switch the weights vLLM downloads, set `LLM_CHAT_MODEL` and `LLM_EMBEDDING_MODEL`:
+By default, `make llm` serves the chat and embedding models listed above with no credentials required and persists the Hugging Face cache in a Docker volume so model weights are reused across restarts. The served model names default to `chat` and `embedding`. To switch the weights vLLM downloads, set `LLM_CHAT_MODEL` and `LLM_EMBEDDING_MODEL`:
 
 ```bash
 LLM_CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct \
 LLM_EMBEDDING_MODEL=BAAI/bge-small-en-v1.5 \
 make llm
 ```
+
+To change the served model names, set `LLM_CHAT_MODEL_NAME` and `LLM_EMBEDDING_MODEL_NAME` (for example, if you want to use the full Hugging Face names as the OpenAI model IDs).
 
 To clear the cached weights, remove the `ai-email-workspace_vllm_cache` Docker volume.
 
@@ -172,9 +185,9 @@ If you prefer to run vLLM directly on your host GPU:
 ```bash
 python -m vllm.entrypoints.openai.api_server \
   --model <chat-model> \
-  --served-model-name <chat-model-name> \
+  --served-model-name chat \
   --model <embedding-model> \
-  --served-model-name <embedding-model-name> \
+  --served-model-name embedding \
   --host 0.0.0.0 \
   --port 8001
 ```
@@ -208,8 +221,8 @@ If you run an OpenAI-compatible server on your host (for example, on `http://loc
 LLM_PROVIDER=openai_compatible
 OPENAI_API_KEY=local-key
 OPENAI_BASE_URL=http://host.docker.internal:8001/v1
-CHAT_MODEL=your-chat-model
-EMBEDDING_MODEL=your-embedding-model
+OPENAI_CHAT_MODEL=your-chat-model
+OPENAI_EMBEDDING_MODEL=your-embedding-model
 ```
 
 In Docker Compose, `host.docker.internal` is wired to the host via `extra_hosts` so containers can reach the service running on your machine.
