@@ -15,16 +15,20 @@ class OpenAIProvider(LLMProvider):
         self.base_url = settings.openai_base_url.rstrip("/")
 
     def _resolve_chat_model(self) -> str:
+        if not settings.openai_chat_model:
+            raise RuntimeError(
+                "Chat model is not configured. Set OPENAI_CHAT_MODEL to the model "
+                "name served by your OpenAI-compatible endpoint."
+            )
         return settings.chat_model or settings.openai_chat_model
 
     def _resolve_embedding_model(self) -> str:
-        embedding_model = settings.embedding_model or settings.openai_embedding_model
-        if not embedding_model:
+        if not settings.openai_embedding_model:
             raise RuntimeError(
-                "Embedding model is not configured. Set EMBEDDING_MODEL or "
-                "OPENAI_EMBEDDING_MODEL to a model that supports /v1/embeddings."
+                "Embedding model is not configured. Set OPENAI_EMBEDDING_MODEL to "
+                "a model that supports /v1/embeddings."
             )
-        return embedding_model
+        return settings.embedding_model or settings.openai_embedding_model
 
     def _headers(self) -> dict[str, str]:
         if not self.api_key:
@@ -42,7 +46,7 @@ class OpenAIProvider(LLMProvider):
         chat_model = self._resolve_chat_model()
         if embedding_model == chat_model:
             raise RuntimeError(
-                "Embedding model matches the chat model. Configure EMBEDDING_MODEL "
+                "Embedding model matches the chat model. Configure OPENAI_EMBEDDING_MODEL "
                 "to a model that supports /v1/embeddings."
             )
         payload = {"model": embedding_model, "input": texts}
